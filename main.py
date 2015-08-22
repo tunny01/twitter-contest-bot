@@ -15,6 +15,7 @@ access_token_key = data["access-token-key"]
 access_token_secret = data["access-token-secret"]
 retweet_update_time = data["retweet-update-time"]
 scan_update_time = data["scan-update-time"]
+rate_limit_update_time = data["rate-limit-update-time"]
 search_queries = data["search-queries"]
 follow_keywords = data["follow-keywords"]
 fav_keywords = data["fav-keywords"]
@@ -30,17 +31,42 @@ if os.path.isfile('ignorelist'):
 	with open('ignorelist') as f:
 		ignore_list = f.read().splitlines()
 	f.close()
-	print ignore_list
-	time.sleep(1)
 
 
 # Print and log the text
 def LogAndPrint( text ):
+	tmp = str(text)
 	tmp = text.replace("\n","")
 	print(tmp)
 	f_log = open('log', 'a')
 	f_log.write(tmp + "\n")
 	f_log.close()
+
+
+def CheckRateLimit():
+        c = threading.Timer(rate_limit_update_time, CheckRateLimit)
+        c.daemon = True;
+        c.start()
+
+	r = api.request('application/rate_limit_status').json()
+
+	#print json.dumps(r, sort_keys=True, indent=4)
+	#print r[u'resources'][u'statuses'][u'/statuses/retweets/:id'][u'remaining']
+
+	for res_family in r['resources']:
+		for res in r['resources'][res_family]:
+			limit = r['resources'][res_family][res]['limit']
+			remaining = r['resources'][res_family][res]['remaining']
+			percent = float(remaining)/float(limit)*100
+
+			#print(res_family + " -> " + res + ": " + str(percent))
+			if percent < 10.0:
+				LogAndPrint(res_family + " -> " + res + ": " + str(percent) + "  !!! <10% Emergency exit !!!")				
+				quit()
+			elif percent < 30.0:
+				LogAndPrint(res_family + " -> " + res + ": " + str(percent) + "  !!! <30% alert !!!")				
+			elif percent < 60.0:
+				print(res_family + " -> " + res + ": " + str(percent))
 
 
 # Update the Retweet queue (this prevents too many retweets happening at once.)
@@ -83,13 +109,22 @@ def CheckForFollowRequest(item):
 # Be careful with this function! Twitter may write ban your application for favoriting too aggressively
 def CheckForFavoriteRequest(item):
 	text = item['text']
+#	if any(x in text.lower() for x in fav_keywords):
+#		try:
+#			api.request('favorites/create', {'id': item['retweeted_status']['user']['id']})
+#			LogAndPrint("Favorite: " + str(item['retweeted_status']['user']['id']))
+#		except:
+#			api.request('favorites/create', {'id': item['id']})
+#			LogAndPrint("Favorite: " + str(item['id']))
+
+
 	if any(x in text.lower() for x in fav_keywords):
 		try:
-			api.request('favorites/create', {'id': item['retweeted_status']['user']['id']})
-			LogAndPrint("Favorite: " + item['retweeted_status']['user']['id'])
+			api.request('favorites/create', {'id': item['retweeted_status']['id']})
+			LogAndPrint("Favorite: " + str(item['retweeted_status']['id']))
 		except:
 			api.request('favorites/create', {'id': item['id']})
-			LogAndPrint("Favorite: " + item['id'])
+			LogAndPrint("Favorite: " + str(item['id']))
 
 
 # Scan for new contests, but not too often because of the rate limit.
@@ -98,84 +133,84 @@ def ScanForContests():
 	t.daemon = True;
 	t.start()
 
-#	global last_twitter_id
+	if not len(post_list)>200:
 	
-	print("=== SCANNING FOR NEW CONTESTS ===")
+		print("=== SCANNING FOR NEW CONTESTS ===")
 
 
-	for search_query in search_queries:
+		for search_query in search_queries:
 
-		print("Getting new results for: " + search_query)
-	
-		try:
-#			r = api.request('search/tweets', {'q':search_query, 'since_id':last_twitter_id})
-			r = api.request('search/tweets', {'q':search_query, 'result_type':"mixed", 'count':100})
-			c=0
-				
-			for item in r:
-				
-				c=c+1
-				user_item = item['user']
-				screen_name = user_item['screen_name']
-				text = item['text']
-				text = text.replace("\n","")
-				id = str(item['id'])
-				original_id=id
-				is_retweet = 0
-
-#				if (item['id'] > last_twitter_id):
-#					last_twitter_id = item['id']
-
-				if 'retweeted_status' in item:
-
-					is_retweet = 1
-					original_item = item['retweeted_status']
-					original_id = str(original_item['id'])
-					original_user_item = original_item['user']
-					original_screen_name = original_user_item['screen_name']
-
-				if not original_id in ignore_list:
-
-					if not original_screen_name in ignore_list:
-				
-						if item['retweet_count'] > 0:
-
-							post_list.append(item)
-							f_ign = open('ignorelist', 'a')
-
-							if is_retweet:
-								print(id + " - " + screen_name + " retweeting " + original_id + " - " + original_screen_name + ": " + text)
-								ignore_list.append(original_id)
-								f_ign.write(original_id + "\n")
-							else:
-								print(id + " - " + screen_name + ": " + text)
-								ignore_list.append(id)
-								f_ign.write(id + "\n")
-
-							f_ign.close()
-
-					else:
+			print("Getting new results for: " + search_query)
 		
-						if is_retweet:
-							print(id + " ignored: " + original_screen_name + " on ignore list")
-						else:
-							print(original_screen_name + " in ignore list")
+			try:
+				r = api.request('search/tweets', {'q':search_query, 'result_type':"mixed", 'count':100})
+				c=0
+					
+				for item in r:
+					
+					c=c+1
+					user_item = item['user']
+					screen_name = user_item['screen_name']
+					text = item['text']
+					text = text.replace("\n","")
+					id = str(item['id'])
+					original_id=id
+					is_retweet = 0
 
-				else:
+					if 'retweeted_status' in item:
 
-					if is_retweet:
-						print(id + " ignored: " + original_id + " on ignore list")
-					else:
-						print(id + " in ignore list")
-			
-			print("Got " + str(c) + " results")
-#			print("Last ID: " + str(last_twitter_id))
+						is_retweet = 1
+						original_item = item['retweeted_status']
+						original_id = str(original_item['id'])
+						original_user_item = original_item['user']
+						original_screen_name = original_user_item['screen_name']
 
-		except Exception as e:
-			print("Could not connect to TwitterAPI - are your credentials correct?")
-			print("Exception: " + e)
+					if not original_id in ignore_list:
+
+						if not original_screen_name in ignore_list:
+					
+							if item['retweet_count'] > 0:
+
+								post_list.append(item)
+								f_ign = open('ignorelist', 'a')
+
+								if is_retweet:
+									print(id + " - " + screen_name + " retweeting " + original_id + " - " + original_screen_name + ": " + text)
+									ignore_list.append(original_id)
+									f_ign.write(original_id + "\n")
+								else:
+									print(id + " - " + screen_name + ": " + text)
+									ignore_list.append(id)
+									f_ign.write(id + "\n")
+
+								f_ign.close()
+
+	#					else:
+	#		
+	#						if is_retweet:
+	#							print(id + " ignored: " + original_screen_name + " on ignore list")
+	#						else:
+	#							print(original_screen_name + " in ignore list")
+
+	#				else:
+	#
+	#					if is_retweet:
+	#						print(id + " ignored: " + original_id + " on ignore list")
+	#					else:
+	#						print(id + " in ignore list")
+				
+				print("Got " + str(c) + " results")
+
+			except Exception as e:
+				print("Could not connect to TwitterAPI - are your credentials correct?")
+				print("Exception: " + e)
+
+	else:
+
+		 print("Queue length too long, skipping scan: " + str(len(post_list)))
 
 
+CheckRateLimit()
 ScanForContests()
 UpdateQueue()
 
