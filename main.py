@@ -97,7 +97,7 @@ def ScanForContests():
 	t = threading.Timer(scan_update_time, ScanForContests)
 	t.daemon = True;
 	t.start()
-
+        original_screen_name = None
 #	global last_twitter_id
 	
 	print("=== SCANNING FOR NEW CONTESTS ===")
