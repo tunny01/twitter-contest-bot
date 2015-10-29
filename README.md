@@ -3,6 +3,15 @@ Will poll for Retweet Contests and retweet them. Inspired by http://www.hscott.n
 
 [![Build Status](https://travis-ci.org/kurozael/twitter-contest-bot.svg?branch=master)](https://travis-ci.org/kurozael/twitter-contest-bot)
 
+Donate
+------------
+
+If you're feeling kind, feel free to throw some cash my way for a beer!
+
+<a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G4J6TEGJ7X2WE">
+<img src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_donateCC_LG.gif"/>
+</a>
+
 Disclaimer
 ------------
 
