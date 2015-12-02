@@ -97,7 +97,7 @@ def ScanForContests():
 	t = threading.Timer(scan_update_time, ScanForContests)
 	t.daemon = True;
 	t.start()
-
+        original_screen_name = None
 #	global last_twitter_id
 	
 	print("=== SCANNING FOR NEW CONTESTS ===")
@@ -173,7 +173,7 @@ def ScanForContests():
 
 		except Exception as e:
 			print("Could not connect to TwitterAPI - are your credentials correct?")
-			print("Exception: " + e)
+			print("Exception: " + str(e))
 
 
 ScanForContests()
