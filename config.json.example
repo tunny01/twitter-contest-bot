@@ -8,8 +8,8 @@
         "min-ratelimit":10,
         "min-ratelimit-retweet":20,
         "min-ratelimit-search":40,
-	"consumer-key": "YOUR CONSUMER KEY",
-	"consumer-secret": "YOUR SECRET KEY",
-	"access-token-key": "YOUR ACCESS TOKEN KEY",
-	"access-token-secret": "YOUR ACCESS TOKEN SECRET"
+	"consumer-key": "TA3sM6sFIjsLp79YZBGpKuAOU",
+	"consumer-secret": "OOrAhEaqJgnRTZrioTktbZbjT4VzzUE9cyXafVCtQkeyboAQn9",
+	"access-token-key": "3114089220-jKeKSefQFhytDBq0xIktAnHk3sWCxBkqFqjhQTn",
+	"access-token-secret": "1LVqXvrvmyrK7sT0vrNtCuuwGEMr6ePOm6ic6k32nIW1T"
 }
